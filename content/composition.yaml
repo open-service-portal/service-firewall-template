@@ -1,0 +1,42 @@
+---
+# Composition (XC)
+apiVersion: apiextensions.crossplane.io/v1
+kind: Composition
+metadata:
+  name: firewallrule
+spec:
+  compositeTypeRef:
+    apiVersion: platform.example.com/v1alpha1
+    kind: XFirewallRule
+  mode: Pipeline
+  pipeline:
+    # Store values in ConfigMap
+    - step: store-values
+      functionRef:
+        name: function-go-templating
+      input:
+        apiVersion: gotemplating.fn.crossplane.io/v1beta1
+        kind: GoTemplate
+        source: Inline
+        inline:
+          template: |
+            apiVersion: v1
+            kind: ConfigMap
+            metadata:
+              name: firewallrule-{{ .observed.composite.resource.spec.claimRef.name }}
+              namespace: {{ .observed.composite.resource.spec.claimRef.namespace }}
+              annotations:
+                gotemplating.fn.crossplane.io/composition-resource-name: configmap
+                # Native Kubernetes objects such as ConfigMap do not have a Ready or status field.
+                # By default, they lack `status.conditions` entries, which Crossplane relies on to determine the "Ready" status.
+                # Thus, explicitly mark this ConfigMap as ready.
+                gotemplating.fn.crossplane.io/ready: "True"
+            data:
+              source: "{{ .observed.composite.resource.spec.source }}"
+              destination: "{{ .observed.composite.resource.spec.destination }}"
+              protocol: "{{ .observed.composite.resource.spec.protocol }}"
+              action: "{{ .observed.composite.resource.spec.action }}"
+
+    - step: detect-readiness
+      functionRef:
+        name: function-auto-ready

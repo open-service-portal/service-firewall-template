@@ -1,0 +1,12 @@
+---
+# Composite Resource (XR)
+apiVersion: platform.example.com/v1alpha1
+kind: FirewallRule
+metadata:
+  name: ${{ values.name | dump }}
+  namespace: ${{ values.namespace | default('default') | dump }}
+spec:
+  source: ${{ values.source | dump }}
+  destination: ${{ values.destination | dump }}
+  protocol: ${{ values.protocol | default('ALL') | dump }}
+  action: ${{ values.action | default('ACCEPT') | dump }}

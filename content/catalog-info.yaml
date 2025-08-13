@@ -1,0 +1,12 @@
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: ${{ values.name | dump }}
+  description: Firewall rule managed via Crossplane
+  annotations:
+    backstage.io/managed-by-location: url:${{ values.repoUrl }}
+spec:
+  type: firewall-rule
+  owner: ${{ values.owner | default('group:platform') | dump }}
+  lifecycle: experimental
+  system: platform-services

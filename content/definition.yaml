@@ -1,0 +1,74 @@
+---
+# Composite Resource Definition (XRD)
+apiVersion: apiextensions.crossplane.io/v1
+kind: CompositeResourceDefinition
+metadata:
+  name: xfirewallrules.platform.example.com
+spec:
+  group: platform.example.com
+  names:
+    kind: XFirewallRule
+    plural: xfirewallrules
+  claimNames:
+    kind: FirewallRule
+    plural: firewallrules
+  versions:
+    - name: v1alpha1
+      served: true
+      referenceable: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          required:
+            - metadata
+            - spec
+          properties:
+            metadata:
+              type: object
+              required:
+                - name
+                - namespace
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 63
+                  example: my-rule
+                  pattern: '^[a-z]([-a-z0-9]*[a-z0-9])?$'
+                namespace:
+                  type: string
+                  minLength: 1
+                  maxLength: 63
+                  example: my-namespace
+                  pattern: '^[a-z]([-a-z0-9]*[a-z0-9])?$'
+            spec:
+              type: object
+              required:
+                - source
+                - destination
+              properties:
+                source:
+                  type: string
+                  example: 0.0.0.0/0
+                  pattern: '^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:$|\/([0-9]|[1-2][0-9]|3[0-2]))$'
+                destination:
+                  type: string
+                  example: 0.0.0.0/0
+                  pattern: '^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:$|\/([0-9]|[1-2][0-9]|3[0-2]))$'
+                protocol:
+                  type: string
+                  default: ALL
+                  example: TCP
+                  enum:
+                    - ALL
+                    - ICMP
+                    - TCP
+                    - UDP
+                action:
+                  type: string
+                  default: ACCEPT
+                  example: DROP
+                  enum:
+                    - ACCEPT
+                    - DROP
+                    - REJECT

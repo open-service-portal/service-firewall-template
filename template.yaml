@@ -1,0 +1,145 @@
+apiVersion: scaffolder.backstage.io/v1beta3
+kind: Template
+metadata:
+  name: service-firewall-template
+  title: Firewall Rule
+  description: Create and manage firewall rules using Crossplane
+  tags:
+    - crossplane
+    - firewall
+    - security
+    - infrastructure
+spec:
+  owner: group:open-service-portal
+  type: resource
+  
+  parameters:
+    - title: Firewall Rule Configuration
+      required:
+        - name
+        - source
+        - destination
+      properties:
+        name:
+          title: Rule Name
+          type: string
+          description: Unique name for this firewall rule
+          pattern: '^[a-z]([-a-z0-9]*[a-z0-9])?$'
+          ui:autofocus: true
+        namespace:
+          title: Namespace
+          type: string
+          description: Kubernetes namespace for the firewall rule resource
+          default: default
+        source:
+          title: Source IP/CIDR
+          type: string
+          description: Source IP address or CIDR block
+          pattern: '^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:$|\/([0-9]|[1-2][0-9]|3[0-2]))$'
+          examples:
+            - "0.0.0.0/0"
+            - "192.168.1.0/24"
+            - "10.0.0.1"
+        destination:
+          title: Destination IP/CIDR
+          type: string
+          description: Destination IP address or CIDR block
+          pattern: '^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:$|\/([0-9]|[1-2][0-9]|3[0-2]))$'
+          examples:
+            - "0.0.0.0/0"
+            - "172.16.0.0/16"
+            - "10.0.0.100"
+        protocol:
+          title: Protocol
+          type: string
+          description: Network protocol for the rule
+          default: ALL
+          enum:
+            - ALL
+            - TCP
+            - UDP
+            - ICMP
+          enumNames:
+            - All Protocols
+            - TCP Only
+            - UDP Only
+            - ICMP Only
+        action:
+          title: Action
+          type: string
+          description: Action to take when rule matches
+          default: ACCEPT
+          enum:
+            - ACCEPT
+            - DROP
+            - REJECT
+          enumNames:
+            - Accept (Allow traffic)
+            - Drop (Silently block)
+            - Reject (Block with response)
+        owner:
+          title: Owner
+          type: string
+          description: Owner of the firewall rule
+          ui:field: OwnerPicker
+          ui:options:
+            catalogFilter:
+              kind: Group
+    
+    - title: Repository Location
+      required:
+        - repoUrl
+      properties:
+        repoUrl:
+          title: Repository Location
+          type: string
+          ui:field: RepoUrlPicker
+          ui:options:
+            allowedHosts:
+              - github.com
+            allowedOwners:
+              - open-service-portal
+  
+  steps:
+    - id: fetch-base
+      name: Fetch Base
+      action: fetch:template
+      input:
+        url: ./content
+        values:
+          name: ${{ parameters.name }}
+          namespace: ${{ parameters.namespace }}
+          source: ${{ parameters.source }}
+          destination: ${{ parameters.destination }}
+          protocol: ${{ parameters.protocol }}
+          action: ${{ parameters.action }}
+          owner: ${{ parameters.owner }}
+          repoUrl: ${{ parameters.repoUrl }}
+    
+    - id: publish
+      name: Publish to GitHub
+      action: publish:github
+      input:
+        description: Firewall rule configuration for ${{ parameters.name }}
+        repoUrl: ${{ parameters.repoUrl }}
+        defaultBranch: main
+        gitCommitMessage: 'feat: add firewall rule ${{ parameters.name }}'
+        topics:
+          - crossplane
+          - firewall
+          - security
+    
+    - id: register
+      name: Register in Catalog
+      action: catalog:register
+      input:
+        repoContentsUrl: ${{ steps['publish'].output.repoContentsUrl }}
+        catalogInfoPath: '/catalog-info.yaml'
+  
+  output:
+    links:
+      - title: Repository
+        url: ${{ steps['publish'].output.remoteUrl }}
+      - title: Open in catalog
+        icon: catalog
+        entityRef: ${{ steps['register'].output.entityRef }}
