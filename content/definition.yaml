@@ -1,6 +1,6 @@
 ---
 # Composite Resource Definition (XRD)
-apiVersion: apiextensions.crossplane.io/v1
+apiVersion: apiextensions.crossplane.io/v2
 kind: CompositeResourceDefinition
 metadata:
   name: xfirewallrules.platform.example.com
